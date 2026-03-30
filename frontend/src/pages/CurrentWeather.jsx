@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import WeatherChart from "../components/WeatherChart";
+import Shimmer from "../components/Shimmer";
 
 const CurrentWeather = () => {
   const [coords, setCoords] = useState(null);
@@ -74,7 +75,13 @@ const CurrentWeather = () => {
       hour12: true,
     });
 
-  if (!weather) return <div className="p-6">Loading...</div>;
+ if (!weather) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-400 p-6">
+      <Shimmer />
+    </div>
+  );
+}
 
   // 📊 Chart Data (ONLY TODAY)
   const todayDate = new Date().toISOString().split("T")[0];
