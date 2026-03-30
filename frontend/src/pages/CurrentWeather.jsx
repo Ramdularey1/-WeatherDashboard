@@ -4,7 +4,9 @@ import WeatherChart from "../components/WeatherChart";
 const CurrentWeather = () => {
   const [coords, setCoords] = useState(null);
   const [weather, setWeather] = useState(null);
+  const [airData, setAirData] = useState(null);
 
+  // 📍 Get Location
   useEffect(() => {
     navigator.geolocation.getCurrentPosition((pos) => {
       setCoords({
@@ -14,18 +16,40 @@ const CurrentWeather = () => {
     });
   }, []);
 
+  // 🌤 Weather API
   useEffect(() => {
     if (!coords) return;
 
     fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&hourly=temperature_2m,relative_humidity_2m,precipitation,visibility,windspeed_10m,pm10,pm2_5&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&current_weather=true&timezone=auto`
+      `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&hourly=temperature_2m,relative_humidity_2m,precipitation,visibility,windspeed_10m,pm10,pm2_5&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max&current_weather=true&timezone=auto`
     )
       .then((res) => res.json())
       .then(setWeather);
   }, [coords]);
 
+  // 🌫 Air Quality API
+  useEffect(() => {
+    if (!coords) return;
+
+    fetch(
+      `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${coords.lat}&longitude=${coords.lon}&hourly=us_aqi,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide&timezone=auto`
+    )
+      .then((res) => res.json())
+      .then(setAirData);
+  }, [coords]);
+
+  // 🕒 Format time (12-hour)
+  const formatTime = (iso) => {
+    return new Date(iso).toLocaleTimeString("en-IN", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
   if (!weather) return <div className="p-6">Loading...</div>;
 
+  // 📊 Chart Data
   const chartData =
     weather.hourly.time.map((t, i) => ({
       time: new Date(t).getHours() + ":00",
@@ -41,6 +65,7 @@ const CurrentWeather = () => {
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-400 px-4 sm:px-6 lg:px-10 py-6">
 
+      {/* Header */}
       <h1 className="text-xl sm:text-2xl lg:text-3xl text-white text-center mb-6 font-bold">
         🌤 Current Weather
       </h1>
@@ -48,21 +73,42 @@ const CurrentWeather = () => {
       {/* Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
 
-        <div className="bg-white/90 p-4 sm:p-5 rounded-xl shadow">
-          <p className="text-lg sm:text-xl font-semibold">
+        {/* Current Temp */}
+        <div className="bg-white/90 p-4 rounded-xl shadow">
+          <p className="text-lg font-semibold">
             {weather.current_weather.temperature}°C
           </p>
-          <p>Current Temp</p>
+          <p>Current Temperature</p>
         </div>
 
-        <div className="bg-white/90 p-4 sm:p-5 rounded-xl shadow">
-          <p>Max: {weather.daily.temperature_2m_max[0]}</p>
-          <p>Min: {weather.daily.temperature_2m_min[0]}</p>
+        {/* Min/Max */}
+        <div className="bg-white/90 p-4 rounded-xl shadow">
+          <p>Max: {weather.daily.temperature_2m_max[0]}°C</p>
+          <p>Min: {weather.daily.temperature_2m_min[0]}°C</p>
         </div>
 
-        <div className="bg-white/90 p-4 sm:p-5 rounded-xl shadow">
-          <p>Sunrise: {weather.daily.sunrise[0].split("T")[1]}</p>
-          <p>Sunset: {weather.daily.sunset[0].split("T")[1]}</p>
+        {/* 🌅 Sunrise / Sunset */}
+        <div className="bg-white/90 p-4 rounded-xl shadow">
+          <h3 className="font-semibold mb-2">Sun Cycle</h3>
+          <p>🌅 Sunrise: {formatTime(weather.daily.sunrise[0])}</p>
+          <p>🌇 Sunset: {formatTime(weather.daily.sunset[0])}</p>
+        </div>
+
+        {/* 🌧 Precipitation Probability */}
+        <div className="bg-white/90 p-4 rounded-xl shadow">
+          <p>
+            🌧 Rain Chance:{" "}
+            {weather.daily.precipitation_probability_max[0]}%
+          </p>
+        </div>
+
+        {/* 🌫 Air Quality */}
+        <div className="bg-white/90 p-4 rounded-xl shadow">
+          <h3 className="font-semibold mb-2">Air Quality</h3>
+          <p>AQI: {airData?.hourly?.us_aqi?.at(-1) ?? "N/A"}</p>
+          <p>CO: {airData?.hourly?.carbon_monoxide?.at(-1) ?? "N/A"}</p>
+          <p>NO₂: {airData?.hourly?.nitrogen_dioxide?.at(-1) ?? "N/A"}</p>
+          <p>SO₂: {airData?.hourly?.sulphur_dioxide?.at(-1) ?? "N/A"}</p>
         </div>
 
       </div>
@@ -78,7 +124,6 @@ const CurrentWeather = () => {
         <WeatherChart data={chartData} dataKey="pm10" secondKey="pm2_5" color="#7c3aed" title="PM10 & PM2.5" />
 
       </div>
-
     </div>
   );
 };
