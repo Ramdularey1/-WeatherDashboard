@@ -4,146 +4,98 @@ import WeatherChart from "../components/WeatherChart";
 const History = () => {
   const [coords, setCoords] = useState(null);
   const [data, setData] = useState(null);
-  const [startDate, setStartDate] = useState("2024-01-01");
-  const [endDate, setEndDate] = useState("2024-01-07");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  // 📍 Get Location
+  const today = new Date().toISOString().split("T")[0];
+
+  const [startDate, setStartDate] = useState("2024-01-01");
+  const [endDate, setEndDate] = useState(today);
+
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setCoords({
-          lat: pos.coords.latitude,
-          lon: pos.coords.longitude,
-        });
-      },
-      () => {
-        setError("Location access denied.");
-      }
-    );
+    navigator.geolocation.getCurrentPosition((pos) => {
+      setCoords({
+        lat: pos.coords.latitude,
+        lon: pos.coords.longitude,
+      });
+    });
   }, []);
 
-  // 📡 Fetch Data
   const fetchData = () => {
-    if (!coords) {
-      setError("Location not available yet.");
-      return;
-    }
+    if (!coords) return;
 
-    // ❗ Validation
-    if (new Date(startDate) > new Date(endDate)) {
+    if (startDate > endDate) {
       alert("Start date cannot be greater than end date");
       return;
     }
 
-    const diff =
-      (new Date(endDate) - new Date(startDate)) /
-      (1000 * 60 * 60 * 24);
-
-    if (diff > 730) {
-      alert("Max 2 years range allowed");
+    if (endDate > today) {
+      alert("Future date not allowed");
       return;
     }
 
-    setLoading(true);
-    setError("");
-    setData(null);
-
-    const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${coords.lat}&longitude=${coords.lon}&start_date=${startDate}&end_date=${endDate}&daily=temperature_2m_max,temperature_2m_min,temperature_2m_mean,precipitation_sum,windspeed_10m_max&timezone=auto`;
-
-    fetch(url)
-      .then((res) => {
-        if (!res.ok) throw new Error();
-        return res.json();
-      })
-      .then((res) => {
-        setData(res);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError("Failed to fetch data.");
-        setLoading(false);
-      });
+    fetch(
+      `https://archive-api.open-meteo.com/v1/archive?latitude=${coords.lat}&longitude=${coords.lon}&start_date=${startDate}&end_date=${endDate}&daily=temperature_2m_max,temperature_2m_min,temperature_2m_mean,precipitation_sum,windspeed_10m_max&timezone=auto`
+    )
+      .then((res) => res.json())
+      .then(setData);
   };
 
-  // 📊 Chart Data
   const chartData =
-    data?.daily?.time.map((date, index) => ({
-      time: date, // SAME key as current charts
-      tempMax: data.daily.temperature_2m_max[index],
-      tempMin: data.daily.temperature_2m_min[index],
-      tempMean: data.daily.temperature_2m_mean[index],
-      precipitation: data.daily.precipitation_sum[index],
-      wind: data.daily.windspeed_10m_max[index],
+    data?.daily?.time.map((d, i) => ({
+      time: d,
+      tempMax: data.daily.temperature_2m_max[i],
+      tempMin: data.daily.temperature_2m_min[i],
+      tempMean: data.daily.temperature_2m_mean[i],
+      precipitation: data.daily.precipitation_sum[i],
+      wind: data.daily.windspeed_10m_max[i],
     })) || [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-400 p-6">
+    <div className="min-h-screen w-full bg-gradient-to-br from-purple-500 via-indigo-500 to-blue-400 px-4 sm:px-6 lg:px-10 py-6">
 
-      {/* Header */}
-      <h1 className="text-3xl font-bold text-center text-white mb-6">
+      <h1 className="text-xl sm:text-2xl lg:text-3xl text-white text-center mb-6 font-bold">
         📊 Historical Weather
       </h1>
 
-      {/* Date Picker */}
-      <div className="flex flex-col md:flex-row gap-4 justify-center mb-6">
+      {/* Inputs */}
+      <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
 
         <input
           type="date"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
-          className="p-2 rounded-lg shadow"
+          className="p-2 sm:p-3 rounded-lg w-full sm:w-auto"
         />
 
         <input
           type="date"
           value={endDate}
+          max={today}
           onChange={(e) => setEndDate(e.target.value)}
-          className="p-2 rounded-lg shadow"
+          className="p-2 sm:p-3 rounded-lg w-full sm:w-auto"
         />
 
         <button
           onClick={fetchData}
-          disabled={loading}
-          className="bg-white/90 backdrop-blur-lg px-4 py-2 rounded-lg shadow hover:scale-105 transition disabled:opacity-50"
+          className="bg-white px-4 py-2 w-full sm:w-auto rounded-lg shadow"
         >
-          {loading ? "Loading..." : "Get Data"}
+          Fetch
         </button>
-      </div>
 
-      {/* Error */}
-      {error && (
-        <p className="text-center text-red-200 mb-4">{error}</p>
-      )}
+      </div>
 
       {/* Charts */}
       {data && (
-        <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-          {/* SAME STYLE AS CURRENT WEATHER */}
-          <div className="bg-white/90 backdrop-blur-lg rounded-2xl p-3">
-            <WeatherChart data={chartData} dataKey="tempMax" color="#ef4444" title="🔥 Max Temperature" />
-          </div>
-
-          <div className="bg-white/90 backdrop-blur-lg rounded-2xl p-3">
-            <WeatherChart data={chartData} dataKey="tempMin" color="#3b82f6" title="❄️ Min Temperature" />
-          </div>
-
-          <div className="bg-white/90 backdrop-blur-lg rounded-2xl p-3">
-            <WeatherChart data={chartData} dataKey="tempMean" color="#10b981" title="🌡 Mean Temperature" />
-          </div>
-
-          <div className="bg-white/90 backdrop-blur-lg rounded-2xl p-3">
-            <WeatherChart data={chartData} dataKey="precipitation" color="#0284c7" title="🌧 Precipitation" />
-          </div>
-
-          <div className="bg-white/90 backdrop-blur-lg rounded-2xl p-3">
-            <WeatherChart data={chartData} dataKey="wind" color="#f97316" title="💨 Wind Speed" />
-          </div>
+          <WeatherChart data={chartData} dataKey="tempMax" color="#ef4444" title="Max Temp" />
+          <WeatherChart data={chartData} dataKey="tempMin" color="#3b82f6" title="Min Temp" />
+          <WeatherChart data={chartData} dataKey="tempMean" color="#10b981" title="Mean Temp" />
+          <WeatherChart data={chartData} dataKey="precipitation" color="#0284c7" title="Precipitation" />
+          <WeatherChart data={chartData} dataKey="wind" color="#f97316" title="Wind Speed" />
 
         </div>
       )}
+
     </div>
   );
 };
