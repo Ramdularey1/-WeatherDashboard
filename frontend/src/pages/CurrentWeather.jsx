@@ -5,6 +5,7 @@ const CurrentWeather = () => {
   const [coords, setCoords] = useState(null);
   const [weather, setWeather] = useState(null);
   const [airData, setAirData] = useState(null);
+  const [locationName, setLocationName] = useState("");
 
   // 📍 Get Location
   useEffect(() => {
@@ -15,6 +16,33 @@ const CurrentWeather = () => {
       });
     });
   }, []);
+
+  // 🌍 Get Location Name (ENGLISH FIXED)
+  useEffect(() => {
+    if (!coords) return;
+
+    fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${coords.lat}&lon=${coords.lon}&format=json&accept-language=en`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        const addr = data.address;
+
+        const city =
+          addr.city ||
+          addr.town ||
+          addr.village ||
+          addr.county ||
+          addr.state_district ||
+          data.display_name?.split(",")[0] ||
+          "Unknown";
+
+        setLocationName(city);
+      })
+      .catch(() => {
+        setLocationName("Unknown");
+      });
+  }, [coords]);
 
   // 🌤 Weather API
   useEffect(() => {
@@ -38,73 +66,73 @@ const CurrentWeather = () => {
       .then(setAirData);
   }, [coords]);
 
-  // 🕒 Format time (12-hour)
-  const formatTime = (iso) => {
-    return new Date(iso).toLocaleTimeString("en-IN", {
+  // 🕒 Format Time
+  const formatTime = (iso) =>
+    new Date(iso).toLocaleTimeString("en-IN", {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
     });
-  };
 
   if (!weather) return <div className="p-6">Loading...</div>;
 
-  // 📊 Chart Data
+  // 📊 Chart Data (ONLY TODAY)
+  const todayDate = new Date().toISOString().split("T")[0];
+
   const chartData =
-    weather.hourly.time.map((t, i) => ({
-      time: new Date(t).getHours() + ":00",
-      temperature: weather.hourly.temperature_2m[i],
-      humidity: weather.hourly.relative_humidity_2m[i],
-      precipitation: weather.hourly.precipitation[i],
-      visibility: weather.hourly.visibility[i],
-      wind: weather.hourly.windspeed_10m[i],
-      pm10: weather.hourly.pm10[i],
-      pm2_5: weather.hourly.pm2_5[i],
-    }));
+    weather?.hourly?.time
+      ?.map((t, i) => ({
+        fullTime: t,
+        date: t.split("T")[0],
+        time: new Date(t).getHours() + ":00",
+        temperature: weather.hourly.temperature_2m?.[i] ?? 0,
+        humidity: weather.hourly.relative_humidity_2m?.[i] ?? 0,
+        precipitation: weather.hourly.precipitation?.[i] ?? 0,
+        visibility: weather.hourly.visibility?.[i] ?? 0,
+        wind: weather.hourly.windspeed_10m?.[i] ?? 0,
+        pm10: weather.hourly.pm10?.[i] ?? 0,
+        pm2_5: weather.hourly.pm2_5?.[i] ?? 0,
+      }))
+      ?.filter((item) => item.date === todayDate)
+      ?.sort((a, b) => new Date(a.fullTime) - new Date(b.fullTime)) || [];
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-400 px-4 sm:px-6 lg:px-10 py-6">
 
       {/* Header */}
-      <h1 className="text-xl sm:text-2xl lg:text-3xl text-white text-center mb-6 font-bold">
+      <h1 className="text-xl sm:text-2xl lg:text-3xl text-white text-center mb-2 font-bold">
         🌤 Current Weather
       </h1>
 
-      {/* Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+      <p className="text-center text-white mb-6 text-sm sm:text-base">
+        📍 {locationName || "Fetching location..."}
+      </p>
 
-        {/* Current Temp */}
-        <div className="bg-white/90 p-4 rounded-xl shadow">
+      {/* Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6 auto-rows-fr">
+
+        <div className="bg-white/90 p-5 rounded-xl shadow h-full flex flex-col justify-between">
           <p className="text-lg font-semibold">
             {weather.current_weather.temperature}°C
           </p>
           <p>Current Temperature</p>
         </div>
 
-        {/* Min/Max */}
-        <div className="bg-white/90 p-4 rounded-xl shadow">
-          <p>Max: {weather.daily.temperature_2m_max[0]}°C</p>
-          <p>Min: {weather.daily.temperature_2m_min[0]}°C</p>
+        <div className="bg-white/90 p-5 rounded-xl shadow h-full flex flex-col justify-between">
+          <p>🔺 Max: {weather.daily.temperature_2m_max[0]}°C</p>
+          <p>🔻 Min: {weather.daily.temperature_2m_min[0]}°C</p>
         </div>
 
-        {/* 🌅 Sunrise / Sunset */}
-        <div className="bg-white/90 p-4 rounded-xl shadow">
-          <h3 className="font-semibold mb-2">Sun Cycle</h3>
-          <p>🌅 Sunrise: {formatTime(weather.daily.sunrise[0])}</p>
-          <p>🌇 Sunset: {formatTime(weather.daily.sunset[0])}</p>
+        <div className="bg-white/90 p-5 rounded-xl shadow h-full flex flex-col justify-between">
+          <p>🌅 {formatTime(weather.daily.sunrise[0])}</p>
+          <p>🌇 {formatTime(weather.daily.sunset[0])}</p>
         </div>
 
-        {/* 🌧 Precipitation Probability */}
-        <div className="bg-white/90 p-4 rounded-xl shadow">
-          <p>
-            🌧 Rain Chance:{" "}
-            {weather.daily.precipitation_probability_max[0]}%
-          </p>
+        <div className="bg-white/90 p-5 rounded-xl shadow h-full flex flex-col justify-between">
+          🌧 Rain Chance: {weather.daily.precipitation_probability_max[0]}%
         </div>
 
-        {/* 🌫 Air Quality */}
-        <div className="bg-white/90 p-4 rounded-xl shadow">
-          <h3 className="font-semibold mb-2">Air Quality</h3>
+        <div className="bg-white/90 p-5 rounded-xl shadow h-full flex flex-col justify-between">
           <p>AQI: {airData?.hourly?.us_aqi?.at(-1) ?? "N/A"}</p>
           <p>CO: {airData?.hourly?.carbon_monoxide?.at(-1) ?? "N/A"}</p>
           <p>NO₂: {airData?.hourly?.nitrogen_dioxide?.at(-1) ?? "N/A"}</p>

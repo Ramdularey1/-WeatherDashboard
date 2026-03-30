@@ -6,6 +6,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   Brush,
+  CartesianGrid,
 } from "recharts";
 
 const WeatherChart = ({ data, dataKey, color, title, secondKey }) => {
@@ -13,34 +14,49 @@ const WeatherChart = ({ data, dataKey, color, title, secondKey }) => {
 
   return (
     <div className="bg-white/90 backdrop-blur-lg rounded-2xl p-4 shadow w-full min-w-0">
-      <h2 className="font-semibold mb-2 text-sm sm:text-base lg:text-lg">
-        {title}
-      </h2>
+      <h2 className="font-semibold mb-2">{title}</h2>
 
-      {/* Responsive Chart */}
-      <div className="w-full h-[250px] sm:h-[300px] lg:h-[350px] overflow-x-auto">
-        <div className="min-w-[600px] h-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data}>
-              <XAxis dataKey="time" />
-              <YAxis />
-              <Tooltip />
+      <div className="w-full h-[250px] sm:h-[300px] lg:h-[350px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data}>
 
-              <Line type="monotone" dataKey={dataKey} stroke={color} dot={false} />
+            {/* Grid */}
+            <CartesianGrid strokeDasharray="3 3" />
 
-              {secondKey && (
-                <Line
-                  type="monotone"
-                  dataKey={secondKey}
-                  stroke="#db2777"
-                  dot={false}
-                />
-              )}
+            {/* Axes */}
+            <XAxis dataKey="time" />
+            <YAxis />
 
-              <Brush dataKey="time" height={30} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+            {/* Tooltip */}
+            <Tooltip contentStyle={{ borderRadius: "10px" }} />
+
+            {/* Main Line */}
+            <Line
+              type="monotone"
+              dataKey={dataKey}
+              stroke={color}
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 6 }} // 🔥 moving dot
+            />
+
+            {/* Optional Second Line */}
+            {secondKey && (
+              <Line
+                type="monotone"
+                dataKey={secondKey}
+                stroke="#db2777"
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 6 }}
+              />
+            )}
+
+            {/* Zoom */}
+            <Brush dataKey="time" height={30} />
+
+          </LineChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );

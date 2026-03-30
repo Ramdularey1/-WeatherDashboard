@@ -5,6 +5,7 @@ const History = () => {
   const [coords, setCoords] = useState(null);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [locationName, setLocationName] = useState("");
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -20,6 +21,33 @@ const History = () => {
       });
     });
   }, []);
+
+  // 🌍 Get Location Name (ENGLISH)
+  useEffect(() => {
+    if (!coords) return;
+
+    fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${coords.lat}&lon=${coords.lon}&format=json&accept-language=en`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        const addr = data.address;
+
+        const city =
+          addr.city ||
+          addr.town ||
+          addr.village ||
+          addr.county ||
+          addr.state_district ||
+          data.display_name?.split(",")[0] ||
+          "Unknown";
+
+        setLocationName(city);
+      })
+      .catch(() => {
+        setLocationName("Unknown");
+      });
+  }, [coords]);
 
   // 📡 Fetch Data
   const fetchData = () => {
@@ -60,9 +88,14 @@ const History = () => {
     <div className="min-h-screen w-full bg-gradient-to-br from-purple-500 via-indigo-500 to-blue-400 px-4 sm:px-6 lg:px-10 py-6">
 
       {/* Header */}
-      <h1 className="text-xl sm:text-2xl lg:text-3xl text-white text-center mb-6 font-bold">
+      <h1 className="text-xl sm:text-2xl lg:text-3xl text-white text-center mb-2 font-bold">
         📊 Historical Weather
       </h1>
+
+      {/* 📍 Location */}
+      <p className="text-center text-white mb-6 text-sm sm:text-base">
+        📍 {locationName || "Fetching location..."}
+      </p>
 
       {/* Inputs */}
       <div className="flex flex-col sm:flex-row gap-3 items-center justify-center mb-6">
@@ -82,7 +115,6 @@ const History = () => {
           className="p-2 sm:p-3 rounded-lg shadow w-full sm:w-auto"
         />
 
-        {/* 🔥 Loading Button */}
         <button
           onClick={fetchData}
           disabled={loading}
@@ -100,7 +132,6 @@ const History = () => {
       {/* 🌅 Sun Cycle */}
       {data && (
         <div className="bg-white/90 backdrop-blur-lg p-5 rounded-xl shadow mb-6 text-center">
-
           <h3 className="font-semibold mb-2">Sun Cycle</h3>
 
           <p>
@@ -120,7 +151,6 @@ const History = () => {
               hour12: true,
             })}
           </p>
-
         </div>
       )}
 
