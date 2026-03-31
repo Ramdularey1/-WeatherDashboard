@@ -6,7 +6,7 @@ A modern, responsive weather dashboard built using ReactJS that provides real-ti
 
 ## 🚀 Live Demo
 
-🔗 Add your deployed link here (Vercel)
+🔗 (https://weather-dashboard-zeta-sepia.vercel.app/)
 
 ---
 
@@ -102,7 +102,7 @@ Deployed on Vercel for fast and reliable hosting.
 
 ## 👨‍💻 Author
 
-* Your Name
+* Ram Dularey
 
 ---
 
