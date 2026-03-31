@@ -4,6 +4,55 @@ A modern, responsive weather dashboard built using ReactJS that provides real-ti
 
 ---
 
+## 🧑‍💻 How to Use the Application
+
+Follow these steps to explore the Weather Dashboard:
+
+### 1. Open the Application
+
+* Launch the deployed application in your browser.
+
+### 2. Allow Location Access
+
+* On first load, the app will request permission to access your location.
+* Click **"Allow"** to enable GPS-based weather data.
+
+### 3. View Current Weather
+
+* The dashboard displays real-time weather information for your location, including:
+
+  * Current temperature
+  * Minimum and maximum temperature
+  * Humidity, precipitation, and wind details
+  * Air quality metrics (AQI, CO, NO₂, SO₂)
+  * Sunrise and sunset timings (12-hour format)
+
+### 4. Explore Hourly Forecast
+
+* Interactive charts display hourly weather data.
+* Hover over the graphs to see detailed values.
+* Use the **zoom (brush)** feature to focus on specific time ranges.
+* Scroll horizontally on smaller screens to view full datasets.
+
+### 5. Analyze Historical Data
+
+* Navigate to the **History** page.
+* Select a start date and end date (maximum range: 2 years).
+* Click **"Fetch Data"** to load historical weather insights.
+
+
+
+---
+
+## ⚠️ Notes
+
+* Some air quality data may not be available for historical ranges due to API limitations.
+* Location access is required for accurate and personalized weather data.
+* Ensure you have an active internet connection for fetching live data.
+
+
+
+
 ## 🚀 Live Demo
 
 🔗 (https://weather-dashboard-zeta-sepia.vercel.app/)
