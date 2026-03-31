@@ -18,7 +18,7 @@ const CurrentWeather = () => {
     });
   }, []);
 
-  // 🌍 Get Location Name (ENGLISH FIXED)
+  // 🌍 Get Location Name
   useEffect(() => {
     if (!coords) return;
 
@@ -40,9 +40,7 @@ const CurrentWeather = () => {
 
         setLocationName(city);
       })
-      .catch(() => {
-        setLocationName("Unknown");
-      });
+      .catch(() => setLocationName("Unknown"));
   }, [coords]);
 
   // 🌤 Weather API
@@ -75,13 +73,19 @@ const CurrentWeather = () => {
       hour12: true,
     });
 
- if (!weather) {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-400 p-6">
-      <Shimmer />
-    </div>
-  );
-}
+  if (!weather) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-400 p-6">
+        <Shimmer />
+      </div>
+    );
+  }
+
+  // 🔥 Current hour index
+  const currentIndex =
+    airData?.hourly?.time?.findIndex(
+      (t) => new Date(t).getHours() === new Date().getHours()
+    ) ?? 0;
 
   // 📊 Chart Data (ONLY TODAY)
   const todayDate = new Date().toISOString().split("T")[0];
@@ -139,11 +143,18 @@ const CurrentWeather = () => {
           🌧 Rain Chance: {weather.daily.precipitation_probability_max[0]}%
         </div>
 
+        {/* 🌫 Air Quality (WITH UNITS) */}
         <div className="bg-white/90 p-5 rounded-xl shadow h-full flex flex-col justify-between">
-          <p>AQI: {airData?.hourly?.us_aqi?.at(-1) ?? "N/A"}</p>
-          <p>CO: {airData?.hourly?.carbon_monoxide?.at(-1) ?? "N/A"}</p>
-          <p>NO₂: {airData?.hourly?.nitrogen_dioxide?.at(-1) ?? "N/A"}</p>
-          <p>SO₂: {airData?.hourly?.sulphur_dioxide?.at(-1) ?? "N/A"}</p>
+          <p>AQI: {airData?.hourly?.us_aqi?.[currentIndex] ?? "N/A"}</p>
+          <p>
+            CO: {airData?.hourly?.carbon_monoxide?.[currentIndex] ?? "N/A"} μg/m³
+          </p>
+          <p>
+            NO₂: {airData?.hourly?.nitrogen_dioxide?.[currentIndex] ?? "N/A"} μg/m³
+          </p>
+          <p>
+            SO₂: {airData?.hourly?.sulphur_dioxide?.[currentIndex] ?? "N/A"} μg/m³
+          </p>
         </div>
 
       </div>
